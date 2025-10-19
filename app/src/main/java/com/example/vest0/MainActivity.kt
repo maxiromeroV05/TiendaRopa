@@ -29,6 +29,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.example.vest0.model.Usuario
+import com.example.vest0.viewmodel.CatalogoScreen
+import com.example.vest0.viewmodel.LoginScreen
+import com.example.vest0.viewmodel.PerfilScreen
+import com.example.vest0.viewmodel.RegistroScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,13 +46,11 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun VestoApp() {
-    var currentScreen by remember { mutableStateOf("menu") }
+    val currentScreen = remember { mutableStateOf("menu") }
+    val usuarioRegistrado = remember { mutableStateOf<Usuario?>(null) }
+    val usuarioLogeado = remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         Text(
             text = "VESTO",
             fontSize = 32.sp,
@@ -57,7 +60,7 @@ fun VestoApp() {
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
         )
 
         Box(
@@ -66,17 +69,34 @@ fun VestoApp() {
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            when (currentScreen) {
+            when (currentScreen.value) {
                 "menu" -> CentralContent("Menú Principal")
-                "ropa" -> CentralContent("Sección Ropa")
+                "ropa" -> CatalogoScreen()
                 "ubicacion" -> UbicacionScreen()
-                "perfil" -> CentralContent("Perfil de usuario")
+                "perfil" -> PerfilScreen(
+                    usuario = usuarioRegistrado.value,
+                    logeado = usuarioLogeado.value,
+                    onIrLogin = { currentScreen.value = "login" },
+                    onIrRegistro = { currentScreen.value = "registro" }
+                )
+                "registro" -> RegistroScreen { usuario ->
+                    usuarioRegistrado.value = usuario
+                    currentScreen.value = "perfil"
+                }
+                "login" -> LoginScreen(
+                    usuarioRegistrado = usuarioRegistrado.value,
+                    onLoginExitoso = {
+                        usuarioLogeado.value = true
+                        currentScreen.value = "perfil"
+                    },
+                    onIrRegistro = { currentScreen.value = "registro" }
+                )
             }
         }
 
         BottomNavigationBar(
-            currentScreen = currentScreen,
-            onScreenChange = { currentScreen = it }
+            currentScreen = currentScreen.value,
+            onScreenChange = { currentScreen.value = it }
         )
     }
 }
@@ -95,46 +115,27 @@ fun BottomNavigationBar(currentScreen: String, onScreenChange: (String) -> Unit)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomBarButton(
-            text = "Ropa",
-            iconRes = R.drawable.ic_ropa_background,
-            modifier = Modifier.weight(1f),
-            onClick = { onScreenChange("ropa") }
-        )
-        BottomBarButton(
-            text = "Ubicación",
-            iconRes = R.drawable.ic_location_background,
-            modifier = Modifier.weight(1f),
-            onClick = { onScreenChange("ubicacion") }
-        )
-        BottomBarButton(
-            text = "Perfil",
-            iconRes = R.drawable.ic_profile_background,
-            modifier = Modifier.weight(1f),
-            onClick = { onScreenChange("perfil") }
-        )
-        BottomBarButton(
-            text = "Menú",
-            iconRes = R.drawable.ic_home_background,
-            modifier = Modifier.weight(1f),
-            onClick = { onScreenChange("menu") }
-        )
+        BottomBarButton("Ropa", R.drawable.ic_ropa_background, Modifier.weight(1f)) {
+            onScreenChange("ropa")
+        }
+        BottomBarButton("Ubicación", R.drawable.ic_location_background, Modifier.weight(1f)) {
+            onScreenChange("ubicacion")
+        }
+        BottomBarButton("Perfil", R.drawable.ic_profile_background, Modifier.weight(1f)) {
+            onScreenChange("perfil")
+        }
+        BottomBarButton("Menú", R.drawable.ic_launcher_foreground, Modifier.weight(1f)) {
+            onScreenChange("menu")
+        }
     }
 }
 
 @Composable
-fun BottomBarButton(
-    text: String,
-    iconRes: Int,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
+fun BottomBarButton(text: String, iconRes: Int, modifier: Modifier, onClick: () -> Unit) {
     TextButton(
         onClick = onClick,
         modifier = modifier.padding(vertical = 4.dp),
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = Color.White
-        )
+        colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
