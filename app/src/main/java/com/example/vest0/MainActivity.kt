@@ -70,7 +70,7 @@ fun VestoApp() {
             contentAlignment = Alignment.Center
         ) {
             when (currentScreen.value) {
-                "menu" -> CentralContent("Menú Principal")
+                "menu" -> CentralContent()
                 "ropa" -> CatalogoScreen()
                 "ubicacion" -> UbicacionScreen()
                 "perfil" -> PerfilScreen(
@@ -102,8 +102,14 @@ fun VestoApp() {
 }
 
 @Composable
-fun CentralContent(text: String) {
-    Text(text, fontSize = 20.sp, color = Color.Black)
+fun CentralContent() {
+    Image(
+        painter = painterResource(id = R.drawable.ic_foto_menu_playstore),
+        contentDescription = "Imagen del menú principal",
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    )
 }
 
 @Composable
@@ -115,16 +121,16 @@ fun BottomNavigationBar(currentScreen: String, onScreenChange: (String) -> Unit)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomBarButton("Ropa", R.drawable.ic_ropa_background, Modifier.weight(1f)) {
+        BottomBarButton("Ropa", R.drawable.ic_ropa_playstore, Modifier.weight(1f)) {
             onScreenChange("ropa")
         }
-        BottomBarButton("Ubicación", R.drawable.ic_location_background, Modifier.weight(1f)) {
+        BottomBarButton("Ubicación", R.drawable.ic_location_playstore, Modifier.weight(1f)) {
             onScreenChange("ubicacion")
         }
-        BottomBarButton("Perfil", R.drawable.ic_profile_background, Modifier.weight(1f)) {
+        BottomBarButton("Perfil", R.drawable.ic_profile_playstore, Modifier.weight(1f)) {
             onScreenChange("perfil")
         }
-        BottomBarButton("Menú", R.drawable.ic_launcher_foreground, Modifier.weight(1f)) {
+        BottomBarButton("Menú", R.drawable.ic_home_playstore, Modifier.weight(1f)) {
             onScreenChange("menu")
         }
     }
