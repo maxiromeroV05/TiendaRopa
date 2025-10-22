@@ -1,18 +1,12 @@
 package com.example.vest0
 
-import android.Manifest
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.location.Location
-import android.location.LocationManager
+// 📦 Android y sistema
+import UbicacionScreen
 import android.os.Bundle
-import android.provider.Settings
-import android.widget.Toast
+
+// 📦 Jetpack Compose
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,19 +15,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
+
+
+// 📦 Navegación
+import androidx.navigation.compose.*
+import com.example.vest0.model.Producto
 import com.example.vest0.model.Usuario
 import com.example.vest0.viewmodel.CatalogoScreen
+// Importación añadida para CatalogoScreen
 import com.example.vest0.viewmodel.LoginScreen
 import com.example.vest0.viewmodel.PerfilScreen
+import com.example.vest0.viewmodel.ProductoDetalleScreen
 import com.example.vest0.viewmodel.RegistroScreen
+// Nota: Se asume que las vistas (Screens) están en un paquete 'view'
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,62 +44,115 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VestoApp() {
-    val currentScreen = remember { mutableStateOf("menu") }
+    val navController = rememberNavController()
     val usuarioRegistrado = remember { mutableStateOf<Usuario?>(null) }
-    val usuarioLogeado = remember { mutableStateOf(false) }
+    val usuarioLogueado = remember { mutableStateOf(false) }
+    // Usar un mapa mutable para pasar datos complejos entre pantallas es una solución válida.
+    val productosMap = remember { mutableStateMapOf<String, Producto>() }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        Text(
-            text = "VESTO",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Serif,
-            color = Color.Black,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        )
-
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            when (currentScreen.value) {
-                "menu" -> CentralContent()
-                "ropa" -> CatalogoScreen()
-                "ubicacion" -> UbicacionScreen()
-                "perfil" -> PerfilScreen(
-                    usuario = usuarioRegistrado.value,
-                    logeado = usuarioLogeado.value,
-                    onIrLogin = { currentScreen.value = "login" },
-                    onIrRegistro = { currentScreen.value = "registro" }
-                )
-                "registro" -> RegistroScreen { usuario ->
-                    usuarioRegistrado.value = usuario
-                    currentScreen.value = "perfil"
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "VESTO",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 }
-                "login" -> LoginScreen(
+            )
+        },
+        bottomBar = {
+            // Se pasa el NavController directamente para una navegación más limpia
+            BottomNavigationBar(navController = navController)
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = "menu",
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable("menu") { CentralContent() }
+
+            // En MainActivity.kt
+            composable("ropa") {
+                CatalogoScreen { producto -> // <<-- CatalogoScreen ahora acepta esta lambda
+                    // Esta lógica ahora se ejecuta correctamente porque CatalogoScreen
+                    // la invoca al hacer clic en un producto.
+                    val id = producto.nombre
+                    productosMap[id] = producto
+                    navController.navigate("detalle/$id")
+                }
+            }
+
+
+            composable("detalle/{productoId}") { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("productoId")
+                // Se recupera el producto del mapa.
+                val producto = productosMap[id]
+                producto?.let {
+                    ProductoDetalleScreen(producto = it) {
+                        // Acción para volver atrás en la pila de navegación.
+                        navController.popBackStack()
+                    }
+                }
+            }
+            composable("ubicacion") { UbicacionScreen() }
+            composable("perfil") {
+                PerfilScreen(
+                    usuario = usuarioRegistrado.value,
+                    logeado = usuarioLogueado.value,
+                    onIrLogin = { navController.navigate("login") },
+                    onIrRegistro = { navController.navigate("registro") }
+                )
+            }
+            composable("registro") {
+                RegistroScreen { usuario ->
+                    usuarioRegistrado.value = usuario
+                    navController.navigate("perfil")
+                }
+            }
+            composable("login") {
+                LoginScreen(
                     usuarioRegistrado = usuarioRegistrado.value,
                     onLoginExitoso = {
-                        usuarioLogeado.value = true
-                        currentScreen.value = "perfil"
+                        usuarioLogueado.value = true
+                        navController.navigate("perfil")
                     },
-                    onIrRegistro = { currentScreen.value = "registro" }
+                    onIrRegistro = { navController.navigate("registro") }
                 )
             }
         }
-
-        BottomNavigationBar(
-            currentScreen = currentScreen.value,
-            onScreenChange = { currentScreen.value = it }
-        )
     }
 }
+
+// CORRECCIÓN: El tipo genérico "ERROR" fue reemplazado por "Producto".
+// Además, se movió la implementación fuera para mayor claridad, asumiendo que esta
+// es una pantalla compleja que debería estar en su propio fichero.
+/*
+@Composable
+fun CatalogoScreen(onProductoClick: (Producto) -> Unit) {
+    // Aquí iría la implementación real de tu catálogo, por ejemplo:
+    // val viewModel: ProductoViewModel = viewModel()
+    // val productos = viewModel.productos.collectAsState().value
+    // LazyColumn(modifier = Modifier.fillMaxSize()) {
+    //     items(productos) { producto ->
+    //         Text(
+    //             text = producto.nombre,
+    //             modifier = Modifier.clickable { onProductoClick(producto) }
+    //         )
+    //     }
+    // }
+    Text("Implementación de CatalogoScreen pendiente.")
+}
+*/
+// Se deja la implementación de las otras vistas fuera de MainActivity por claridad.
 
 @Composable
 fun CentralContent() {
@@ -112,8 +165,9 @@ fun CentralContent() {
     )
 }
 
+// MODIFICACIÓN: Se pasa el NavController para manejar la navegación.
 @Composable
-fun BottomNavigationBar(currentScreen: String, onScreenChange: (String) -> Unit) {
+fun BottomNavigationBar(navController: androidx.navigation.NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -121,20 +175,21 @@ fun BottomNavigationBar(currentScreen: String, onScreenChange: (String) -> Unit)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomBarButton("Ropa", R.drawable.ic_ropa_playstore, Modifier.weight(1f)) {
-            onScreenChange("ropa")
+        BottomBarButton("ropa", R.drawable.ic_ropa_playstore, Modifier.weight(1f)) {
+            navController.navigate("ropa")
         }
-        BottomBarButton("Ubicación", R.drawable.ic_location_playstore, Modifier.weight(1f)) {
-            onScreenChange("ubicacion")
+        BottomBarButton("ubicacion", R.drawable.ic_location_playstore, Modifier.weight(1f)) {
+            navController.navigate("ubicacion")
         }
-        BottomBarButton("Perfil", R.drawable.ic_profile_playstore, Modifier.weight(1f)) {
-            onScreenChange("perfil")
+        BottomBarButton("perfil", R.drawable.ic_profile_playstore, Modifier.weight(1f)) {
+            navController.navigate("perfil")
         }
-        BottomBarButton("Menú", R.drawable.ic_home_playstore, Modifier.weight(1f)) {
-            onScreenChange("menu")
+        BottomBarButton("menu", R.drawable.ic_home_playstore, Modifier.weight(1f)) {
+            navController.navigate("menu")
         }
     }
 }
+
 
 @Composable
 fun BottomBarButton(text: String, iconRes: Int, modifier: Modifier, onClick: () -> Unit) {
@@ -154,103 +209,3 @@ fun BottomBarButton(text: String, iconRes: Int, modifier: Modifier, onClick: () 
         }
     }
 }
-
-@Composable
-fun UbicacionScreen() {
-    val context = LocalContext.current
-    var permissionGranted by remember { mutableStateOf(false) }
-    var locationEnabled by remember { mutableStateOf(false) }
-    var locationText by remember { mutableStateOf<String?>(null) }
-    var requestLocation by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        permissionGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        locationEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = locationText ?: "Activa la ubicación para ver las tiendas cercanas.",
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(16.dp))
-
-        Button(onClick = { requestLocation = true }) {
-            Text("Activar ubicación")
-        }
-
-        if (requestLocation) {
-            UbicacionPermissionRequester { isGranted ->
-                permissionGranted = isGranted
-                if (isGranted) {
-                    val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-                    locationEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                            lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-
-                    if (!locationEnabled) {
-                        Toast.makeText(context, "Por favor, activa los servicios de ubicación", Toast.LENGTH_SHORT).show()
-                        context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                    }
-                }
-                requestLocation = false
-            }
-        }
-    }
-
-    if (permissionGranted && locationEnabled) {
-        LastKnownLocation { loc ->
-            locationText = if (loc != null) {
-                "Ubicación obtenida:\nLat: ${loc.latitude}\nLng: ${loc.longitude}"
-            } else {
-                "No se pudo obtener la ubicación. Inténtalo de nuevo."
-            }
-            locationEnabled = false
-        }
-    }
-}
-
-@Composable
-fun UbicacionPermissionRequester(onResult: (Boolean) -> Unit) {
-    val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
-            Toast.makeText(context, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
-        }
-        onResult(isGranted)
-    }
-
-    LaunchedEffect(Unit) {
-        launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-    }
-}
-
-@Composable
-fun LastKnownLocation(onLocation: (Location?) -> Unit) {
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        try {
-            val loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-            onLocation(loc)
-        } catch (_: SecurityException) {
-            onLocation(null)
-        }
-    }
-}
-
-
