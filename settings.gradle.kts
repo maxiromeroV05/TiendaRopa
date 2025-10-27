@@ -8,7 +8,7 @@ pluginManagement {
             }
         }
         mavenCentral()
-        gradlePluginPortal()
+        gradlePluginPortal() // <-- Add this line
     }
 }
 dependencyResolutionManagement {
@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Vest0"
 include(":app")
+
