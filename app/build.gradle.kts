@@ -1,3 +1,5 @@
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -16,11 +18,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                cppFlags += ""
-            }
-        }
     }
 
     buildTypes {
@@ -42,16 +39,10 @@ android {
     buildFeatures {
         compose = true
     }
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
 }
 
 dependencies {
-
+    // ✅ Jetpack Compose y Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -63,7 +54,12 @@ dependencies {
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
+
+    // ✅ Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -71,5 +67,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("androidx.navigation:navigation-compose:2.7.3")
+
 }

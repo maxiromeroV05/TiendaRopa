@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 👇 Aquí van los permisos, justo después de abrir <manifest> -->
+    <!-- 👇 Permisos para ubicación -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -16,11 +16,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Vest0">
 
+        <!-- ✅ Clave de API para Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="API_KEY" />
+
         <activity
-            android:name=".MainActivity"
+            android:name="MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Vest0">
+            android:theme="@style/Theme.Vest0"
+            tools:ignore="MissingClass">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
